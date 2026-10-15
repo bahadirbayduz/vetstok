@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17775a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>VetStok</title>
+<style>
+:root{--bg:#f4f6f3;--card:#fff;--tx:#17241d;--mut:#66736c;--bd:#e0e5df;--pri:#17775a;--prit:#fff;--warn:#9a3412;--warnbg:#ffedd5;--bad:#991b1b;--badbg:#fee2e2;--ok:#166534;--okbg:#dcfce7;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1512;--card:#19221d;--tx:#e8efea;--mut:#9aaaa1;--bd:#2a3630;--pri:#3fb68b;--prit:#08140f;--warn:#fdba74;--warnbg:#3a2210;--bad:#fca5a5;--badbg:#3b1414;--ok:#86efac;--okbg:#10301c;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;max-width:1000px;margin:auto;padding:14px 16px}
+h1{font-size:19px;margin:0}header small{color:var(--mut);display:block;font-size:12px}
+#live{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--badbg);color:var(--bad)}#live.on{background:var(--okbg);color:var(--ok)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:9px 2px;font:inherit;font-size:12px;cursor:pointer}
+nav button span{display:block;font-size:20px}nav button.on{color:var(--pri);font-weight:600}
+main{max-width:1000px;margin:auto;padding:0 16px 100px}
+@media(min-width:700px){nav{position:static;max-width:968px;margin:0 auto 14px;border:1px solid var(--bd);border-radius:12px}nav button{font-size:14px}nav button span{display:inline;font-size:15px;margin-right:6px}main{padding-bottom:30px}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.kpi b{display:block;font-size:22px}.kpi span,.mut{color:var(--mut);font-size:13px}
+h2{font-size:15px;margin:0 0 10px}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--bd);white-space:nowrap}th{color:var(--mut);font-weight:500;font-size:12px}
+.tag{padding:2px 8px;border-radius:999px;font-size:12px}.ok{background:var(--okbg);color:var(--ok)}.warn{background:var(--warnbg);color:var(--warn)}.bad{background:var(--badbg);color:var(--bad)}
+input,select{font:inherit;font-size:16px;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.row>*{flex:1 1 140px}
+.btn{border:0;background:var(--pri);color:var(--prit);padding:11px 16px;border-radius:10px;font:inherit;cursor:pointer}
+.btn.s{background:var(--bg);color:var(--tx);border:1px solid var(--bd);padding:5px 10px}
+.li{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)}.li:last-child{border:0}
+.tot{font-size:18px;font-weight:600;margin:10px 0}
+.login{max-width:380px;margin:12vh auto 0}.login input{width:100%;margin-bottom:10px}.login .btn{width:100%}
+#err{color:var(--bad);font-size:13px;min-height:18px}
+#toast{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%);background:var(--pri);color:var(--prit);padding:10px 16px;border-radius:12px;z-index:9;display:none;max-width:92vw;box-shadow:0 4px 16px #0004}
+</style></head>
+<body>
+<div id="toast"></div>
+<header id="hd"></header>
+<nav id="nav" style="display:none"></nav>
+<main id="app"></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ====== SADECE BU 3 SATIRI DEĞİŞTİRİN ====== */
+const SUPABASE_URL="https://ahyiqwksjryoqucwltol.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoeWlxd2tzanJ5b3F1Y3dsdG9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODczNTMsImV4cCI6MjEwNzY2MzM1M30.T23KgiI45WYUKlEiezK0XxcBMTXqy4ad-LCQA6QXUf0";
+const FIRMA="VetStok";
+/* ========================================== */
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const E=i=>document.getElementById(i);
+const TL=n=>Number(n).toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})+" ₺";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const todayS=new Date().toISOString().slice(0,10);
+const daysTo=d=>d?Math.round((new Date(d)-new Date(todayS))/864e5):9999;
+const ROL={yonetici:"Yönetici",satis:"Satış",depo:"Depo"};
+const TABS={panel:["📊","Panel"],stok:["📦","Stok"],siparis:["🛒","Satış"],liste:["🧾","Siparişler"],kisi:["👥","Kullanıcılar"]};
+const ALLOW={yonetici:["panel","stok","siparis","liste","kisi"],satis:["panel","stok","siparis","liste"],depo:["panel","stok"]};
+let me=null,P=[],O=[],M=[],U=[],cart=[],tab="panel",ch=null,tm;
+function toast(t){const e=E("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",4000)}
+function setLive(on){const l=E("live");if(l){l.className=on?"on":"";l.textContent=on?"● Canlı":"○ Bağlantı yok"}}
+
+/* ---- Giriş ---- */
+function showLogin(){E("nav").style.display="none";E("hd").innerHTML="";
+ E("app").innerHTML=`<div class="card login"><h1>🐄 ${esc(FIRMA)}</h1><p class="mut">Stok ve satış yönetimi. Lütfen giriş yapın.</p>
+ <input id="em" type="email" placeholder="E-posta" autocomplete="username"><input id="pw" type="password" placeholder="Şifre" autocomplete="current-password" onkeydown="if(event.key=='Enter')login()">
+ <div id="err"></div><button class="btn" onclick="login()">Giriş yap</button></div>`}
+async function login(){const{error}=await sb.auth.signInWithPassword({email:E("em").value.trim(),password:E("pw").value});
+ if(error){E("err").textContent="E-posta veya şifre hatalı";return}start()}
+async function logout(){await sb.auth.signOut();me=null;showLogin()}
+
+/* ---- Başlangıç ---- */
+async function start(){
+ const{data:{user}}=await sb.auth.getUser();if(!user){showLogin();return}
+ const{data:pr}=await sb.from("profiles").select("*").eq("id",user.id).single();
+ if(!pr){E("app").innerHTML='<div class="card">Hesabınız bulunamadı. Yöneticiye başvurun.</div>';return}
+ me=pr;
+ E("hd").innerHTML=`<h1>🐄 ${esc(FIRMA)}<small>${esc(me.ad)} · ${ROL[me.rol]}</small></h1><span><span id="live">○ Bağlanıyor…</span> <button class="btn s" onclick="logout()">Çıkış</button></span>`;
+ E("nav").style.display="flex";tab="panel";nav();
+ if(!ch){ch=sb.channel("canli").on("postgres_changes",{event:"*",schema:"public"},p=>{
+   if(p.table=="stock_moves"&&p.eventType=="INSERT"&&p.new.kullanici!==me.id){const m=p.new;toast((m.adet<0?"🔔 Yeni satış: ":"📥 Mal kabul: ")+Math.abs(m.adet)+" × "+m.ad)}
+   clearTimeout(tm);tm=setTimeout(loadAll,300)}).subscribe(s=>setLive(s=="SUBSCRIBED"))}
+ await loadAll();go("panel")}
+async function loadAll(){
+ const[p,o,m,u]=await Promise.all([
+  sb.from("products").select("*").order("ad"),
+  sb.from("orders").select("*, order_items(*)").order("created_at",{ascending:false}).limit(200),
+  sb.from("stock_moves").select("*").order("created_at",{ascending:false}).limit(8),
+  sb.from("profiles").select("*").order("ad")]);
+ P=p.data||[];O=o.data||[];M=m.data||[];U=u.data||[];upd()}
+function nav(){E("nav").innerHTML=ALLOW[me.rol].map(k=>`<button class="${k==tab?'on':''}" onclick="go('${k}')"><span>${TABS[k][0]}</span>${TABS[k][1]}</button>`).join("")}
+
+/* ---- Sekmeler ---- */
+function go(t){tab=t;nav();const a=E("app"),y=me.rol=="yonetici";
+ if(t=="stok")a.innerHTML=`<div class="card"><h2>Stok listesi</h2><div class="row"><input id="q" placeholder="Ürün ara…" oninput="rows()"></div><div class="tw"><table><thead><tr><th>Ürün</th><th>Stok</th><th>Fiyat</th><th>SKT</th><th>Durum</th><th></th></tr></thead><tbody id="tb"></tbody></table></div></div>`+
+  (y?`<div class="card"><h2>Yeni ürün</h2><div class="row"><input id="n_ad" placeholder="Ürün adı"><input id="n_kat" placeholder="Kategori"><input id="n_stok" type="number" inputmode="numeric" placeholder="Stok"><input id="n_min" type="number" inputmode="numeric" placeholder="Min. stok"><input id="n_fiyat" type="number" inputmode="decimal" placeholder="Fiyat ₺"><input id="n_skt" type="date"></div><button class="btn" onclick="addP()">Ekle</button></div>`:"");
+ else if(t=="siparis")a.innerHTML=`<div class="card"><h2>Yeni satış</h2><div class="row"><input id="musteri" placeholder="Müşteri / çiftlik / klinik"></div><div class="row"><select id="sel"></select><input id="qty" type="number" inputmode="numeric" min="1" value="1"></div><button class="btn" onclick="addCart()">Sepete ekle</button></div><div class="card"><h2>Sepet</h2><div id="cart"></div></div>`;
+ upd()}
+function upd(){if(!me)return;const a=E("app");
+ if(tab=="panel")a.innerHTML=panel();else if(tab=="stok")rows();
+ else if(tab=="siparis"){fillSel();cartView()}else if(tab=="liste")a.innerHTML=liste();else if(tab=="kisi")a.innerHTML=kisi()}
+function stat(p){const d=daysTo(p.skt);
+ if(d<0)return['bad','SKT geçti'];if(p.stok<=0)return['bad','Tükendi'];if(p.stok<p.min_stok)return['warn','Kritik stok'];if(d<=90)return['warn','SKT yakın'];return['ok','Yeterli']}
+function panel(){
+ const low=P.filter(p=>p.stok<p.min_stok),exp=P.filter(p=>daysTo(p.skt)<=90);
+ const td=new Date().toDateString(),ts=O.filter(o=>new Date(o.created_at).toDateString()==td).reduce((s,o)=>s+Number(o.toplam),0);
+ const val=P.reduce((s,p)=>s+p.stok*p.fiyat,0),bek=O.filter(o=>o.durum!="Teslim edildi").length;
+ return `<div class="grid"><div class="card kpi"><b>${P.length}</b><span>Ürün çeşidi</span></div><div class="card kpi"><b>${TL(val)}</b><span>Stok değeri</span></div><div class="card kpi"><b>${TL(ts)}</b><span>Bugünkü satış</span></div><div class="card kpi"><b>${bek}</b><span>Bekleyen sipariş</span></div></div>
+ <div class="card"><h2>⚠️ Kritik stok</h2>${low.map(p=>`<div class="li"><span>${esc(p.ad)}</span><span class="tag warn">${p.stok} / min ${p.min_stok}</span></div>`).join("")||'<span class="mut">Yok</span>'}</div>
+ <div class="card"><h2>⏳ SKT yaklaşanlar</h2>${exp.map(p=>`<div class="li"><span>${esc(p.ad)}</span><span class="tag ${daysTo(p.skt)<0?'bad':'warn'}">${daysTo(p.skt)} gün</span></div>`).join("")||'<span class="mut">Yok</span>'}</div>
+ <div class="card"><h2>🔄 Son stok hareketleri</h2>${M.map(m=>`<div class="li"><span>${m.adet>0?'📥':'📤'} ${esc(m.ad)}</span><span>${m.adet>0?'+':''}${m.adet}</span></div>`).join("")||'<span class="mut">Henüz hareket yok</span>'}</div>`}
+function rows(){const tb=E("tb");if(!tb)return;const q=(E("q")||{value:""}).value.toLowerCase(),g=["yonetici","depo"].includes(me.rol);
+ tb.innerHTML=P.filter(p=>(p.ad+p.kat).toLowerCase().includes(q)).map(p=>{const[c,t]=stat(p);
+ return `<tr><td>${esc(p.ad)}</td><td><b>${p.stok}</b></td><td>${TL(p.fiyat)}</td><td>${p.skt||"-"}</td><td><span class="tag ${c}">${t}</span></td><td>${g?`<button class="btn s" onclick="recv('${p.id}')">+ Giriş</button>`:""}</td></tr>`}).join("")}
+async function recv(id){const v=parseInt(prompt("Kaç adet mal kabul edildi?","10"));if(!(v>0))return;
+ const{error}=await sb.rpc("receive_stock",{p_id:id,p_adet:v});if(error)alert(error.message);else{toast("Stok girişi yapıldı ✓");loadAll()}}
+async function addP(){const g=i=>E(i).value;if(!g("n_ad")||!g("n_fiyat")){alert("Ürün adı ve fiyat gerekli");return}
+ const{error}=await sb.from("products").insert({ad:g("n_ad"),kat:g("n_kat")||"Diğer",stok:+g("n_stok")||0,min_stok:+g("n_min")||0,fiyat:+g("n_fiyat"),skt:g("n_skt")||null});
+ if(error){alert(error.message);return}toast("Ürün eklendi ✓");["n_ad","n_kat","n_stok","n_min","n_fiyat"].forEach(x=>E(x).value="");loadAll()}
+function fillSel(){const s=E("sel");if(!s)return;const v=s.value;
+ s.innerHTML=P.map(p=>`<option value="${p.id}">${esc(p.ad)} (stok: ${p.stok})</option>`).join("");if(v)s.value=v}
+function addCart(){const id=E("sel").value,q=+E("qty").value,p=P.find(x=>x.id==id);if(!p||!(q>0))return;
+ const inC=(cart.find(c=>c.id==id)||{q:0}).q;if(inC+q>p.stok){alert("Yetersiz stok! Mevcut: "+p.stok);return}
+ const c=cart.find(x=>x.id==id);c?c.q+=q:cart.push({id,q});cartView()}
+function cartView(){const el=E("cart");if(!el)return;cart=cart.filter(c=>P.find(p=>p.id==c.id));
+ if(!cart.length){el.innerHTML='<span class="mut">Sepet boş</span>';return}
+ const pp=c=>P.find(p=>p.id==c.id),t=cart.reduce((s,c)=>s+c.q*pp(c).fiyat,0);
+ el.innerHTML=cart.map((c,i)=>`<div class="li"><span>${c.q} × ${esc(pp(c).ad)}</span><span>${TL(c.q*pp(c).fiyat)} <button class="btn s" onclick="cart.splice(${i},1);cartView()">✕</button></span></div>`).join("")+`<div class="tot">Toplam: ${TL(t)}</div><button class="btn" onclick="finish()">Satışı tamamla</button>`}
+async function finish(){const m=E("musteri").value.trim();if(!m){alert("Müşteri adı girin");return}
+ const{error}=await sb.rpc("create_sale",{p_musteri:m,p_items:cart.map(c=>({id:c.id,adet:c.q}))});
+ if(error){alert(error.message);await loadAll();return}
+ cart=[];toast("Satış kaydedildi, stok güncellendi ✓");await loadAll();go("liste")}
+function liste(){return `<div class="card"><h2>Siparişler</h2><div class="tw"><table><thead><tr><th>No</th><th>Tarih</th><th>Müşteri</th><th>Ürünler</th><th>Toplam</th><th>Durum</th></tr></thead><tbody>${O.map(o=>`<tr><td>#${o.id}</td><td>${new Date(o.created_at).toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</td><td>${esc(o.musteri)}</td><td>${(o.order_items||[]).map(k=>k.adet+"× "+esc(k.ad)).join(", ")}</td><td>${TL(o.toplam)}</td><td><select onchange="setD(${o.id},this.value)">${["Hazırlanıyor","Yolda","Teslim edildi"].map(d=>`<option ${d==o.durum?'selected':''}>${d}</option>`).join("")}</select></td></tr>`).join("")||'<tr><td colspan="6" class="mut">Henüz sipariş yok</td></tr>'}</tbody></table></div></div>`}
+async function setD(id,d){const{error}=await sb.from("orders").update({durum:d}).eq("id",id);if(error)alert(error.message)}
+function kisi(){return `<div class="card"><h2>Kullanıcılar ve yetkiler</h2><p class="mut">Yeni kullanıcıyı Supabase panelinden (Authentication → Users → Add user) ekleyin; burada yetkisini seçin.</p>${U.map(u=>`<div class="li"><span>${esc(u.ad)}</span><select onchange="setR('${u.id}',this.value)">${Object.entries(ROL).map(([k,v])=>`<option value="${k}" ${k==u.rol?'selected':''}>${v}</option>`).join("")}</select></div>`).join("")}</div>`}
+async function setR(id,r){const{error}=await sb.from("profiles").update({rol:r}).eq("id",id);if(error)alert(error.message);else toast("Yetki güncellendi ✓")}
+
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+sb.auth.getSession().then(({data:{session}})=>session?start():showLogin());
+</script></body></html>
